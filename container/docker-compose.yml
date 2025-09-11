@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.5
+    container_name: keycloak-dev
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_LOG_LEVEL: org.keycloak.services.provider.DefaultProviderLoader:DEBUG
+    ports:
+      - "8080:8080" # Keycloak UI
+      - "8787:8787" # Remote Java Debugger Port
+    volumes:
+      # mounts Maven build output directly into Keycloak's providers directory.
+      - ../spis/user-auth/target/user-auth-1.0-SNAPSHOT.jar:/opt/keycloak/providers/user-auth-1.0-SNAPSHOT.jar
+      - ../spis/token-exchange/target/token-exchange-1.0-SNAPSHOT.jar:/opt/keycloak/providers/token-exchange-1.0-SNAPSHOT.jar
+      - ../spis/protocol-mapper-claims/target/protocol-mapper-claims-1.0-SNAPSHOT.jar:/opt/keycloak/providers/protocol-mapper-claims-1.0-SNAPSHOT.jar
