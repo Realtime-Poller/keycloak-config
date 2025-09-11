@@ -17,3 +17,19 @@ services:
       - ../spis/user-auth/target/user-auth-1.0-SNAPSHOT.jar:/opt/keycloak/providers/user-auth-1.0-SNAPSHOT.jar
       - ../spis/token-exchange/target/token-exchange-1.0-SNAPSHOT.jar:/opt/keycloak/providers/token-exchange-1.0-SNAPSHOT.jar
       - ../spis/protocol-mapper-claims/target/protocol-mapper-claims-1.0-SNAPSHOT.jar:/opt/keycloak/providers/protocol-mapper-claims-1.0-SNAPSHOT.jar
+    depends_on:
+      - mock-api
+
+  mock-api:
+    image: mockserver/mockserver:latest
+    container_name: mock-legacy-api
+    ports:
+      - "1080:1080"
+    environment:
+      # Be explicit about where the file is
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/initializerJson.json
+      # Turn on verbose logging for MockServer itself
+      MOCKSERVER_LOG_LEVEL: DEBUG
+    volumes:
+      # The volume mount remains the same
+      - ../mock-api/initializerJson.json:/config/initializerJson.json
