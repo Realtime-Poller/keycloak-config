@@ -15,6 +15,7 @@
         <module>user-auth</module>
         <module>token-exchange</module>
         <module>protocol-mapper-claims</module>
+        <module>user-storage-api-mock</module>
     </modules>
 
     <properties>

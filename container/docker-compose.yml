@@ -9,6 +9,7 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_LOG_LEVEL: org.keycloak.services.provider.DefaultProviderLoader:DEBUG
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787"
     ports:
       - "8080:8080" # Keycloak UI
       - "8787:8787" # Remote Java Debugger Port
@@ -17,6 +18,7 @@ services:
       - ../spis/user-auth/target/user-auth-1.0-SNAPSHOT.jar:/opt/keycloak/providers/user-auth-1.0-SNAPSHOT.jar
       - ../spis/token-exchange/target/token-exchange-1.0-SNAPSHOT.jar:/opt/keycloak/providers/token-exchange-1.0-SNAPSHOT.jar
       - ../spis/protocol-mapper-claims/target/protocol-mapper-claims-1.0-SNAPSHOT.jar:/opt/keycloak/providers/protocol-mapper-claims-1.0-SNAPSHOT.jar
+      - ../spis/user-storage-api-mock/target/user-storage-api-mock-1.0-SNAPSHOT.jar:/opt/keycloak/providers/user-storage-api-mock-1.0-SNAPSHOT.jar
     depends_on:
       - mock-api
 
