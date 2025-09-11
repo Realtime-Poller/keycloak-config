@@ -1,0 +1,31 @@
+[
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/users/alice"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "id": "user-101",
+        "username": "alice",
+        "email": "alice@legacy.com",
+        "firstName": "Alice",
+        "lastName": "Legacy",
+        "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/users/unknown"
+    },
+    "httpResponse": {
+      "statusCode": 404
+    }
+  }
+]
