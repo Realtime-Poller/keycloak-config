@@ -10,13 +10,11 @@ public class LegacyUserStorageProviderFactory implements UserStorageProviderFact
 
     @Override
     public LegacyUserStorageProvider create(KeycloakSession session, ComponentModel model) {
-        // Here you could pass configuration to the provider
         return new LegacyUserStorageProvider(session, model);
     }
 
     @Override
     public String getId() {
-        // This is the unique ID of our provider, shown in the Admin Console
         return PROVIDER_ID;
     }
 }

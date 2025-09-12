@@ -28,10 +28,7 @@ services:
     ports:
       - "1080:1080"
     environment:
-      # Be explicit about where the file is
       MOCKSERVER_INITIALIZATION_JSON_PATH: /config/initializerJson.json
-      # Turn on verbose logging for MockServer itself
       MOCKSERVER_LOG_LEVEL: DEBUG
     volumes:
-      # The volume mount remains the same
       - ../mock-api/initializerJson.json:/config/initializerJson.json
