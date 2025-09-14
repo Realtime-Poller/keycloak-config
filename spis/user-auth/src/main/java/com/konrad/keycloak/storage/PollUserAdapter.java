@@ -6,6 +6,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapter;
 
 import java.util.List;
@@ -30,6 +31,14 @@ public class PollUserAdapter extends AbstractUserAdapter {
     @Override
     public String getEmail() {
         return user.getEmail();
+    }
+
+    @Override
+    public String getId() {
+        if (storageId == null) {
+            storageId = new StorageId(storageProviderModel.getId(), this.user.getId().toString());
+        }
+        return storageId.getId();
     }
 
     @Override
