@@ -7,7 +7,7 @@ import org.keycloak.storage.UserStorageProviderFactory;
 import java.util.List;
 
 public class PollUserStorageProviderFactory implements UserStorageProviderFactory<PollUserStorageProvider> {
-    public static final String PROVIDER_NAME = "user-storage-provider";
+    public static final String PROVIDER_NAME = "poll-app-postgres-v1-provider";
 
     @Override
     public PollUserStorageProvider create(KeycloakSession session, ComponentModel model) {
