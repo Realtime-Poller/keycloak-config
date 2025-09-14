@@ -3,6 +3,7 @@ package com.konrad.keycloak.storage;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.*;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -63,6 +64,54 @@ public class PollUserStorageProvider implements
 
     @Override
     public UserModel getUserById(RealmModel realmModel, String id) {
+        String externalId = StorageId.externalId(id);
+        if(externalId == null) {
+            return null;
+        }
+        Long userId;
+        try {
+            userId = Long.parseLong(externalId);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        return findUserById(realmModel, userId);
+    }
+
+    private UserModel findUserById(RealmModel realmModel, Long userId) {
+        final String SELECT_USER_BY_ID =
+                "SELECT id, email, password, createdTimestamp, lastUpdatedTimestamp" +
+                        " FROM USERS" +
+                        " WHERE id = ?";
+        String url = this.model.getConfig().getFirst("jdbcUrl");
+        String user = this.model.getConfig().getFirst("dbUsername");
+        String password = this.model.getConfig().getFirst("dbPassword");
+
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement preparedStatement = conn.prepareStatement(SELECT_USER_BY_ID)) {
+            preparedStatement.setLong(1, userId);
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                if(rs.next()) {
+                    Instant created = Optional.ofNullable(rs.getTimestamp("createdTimestamp"))
+                            .map(Timestamp::toInstant)
+                            .orElse(null);
+
+                    Instant updated = Optional.ofNullable(rs.getTimestamp("lastUpdatedTimestamp"))
+                            .map(Timestamp::toInstant)
+                            .orElse(null);
+
+                    PollUser pollUser = new PollUser(
+                            rs.getLong("id"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            created,
+                            updated);
+                    return new PollUserAdapter(session, realmModel, model, pollUser);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
