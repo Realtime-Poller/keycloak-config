@@ -1,11 +1,15 @@
 package com.konrad.keycloak.storage;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapter;
 
@@ -42,10 +46,32 @@ public class PollUserAdapter extends AbstractUserAdapter {
     }
 
     @Override
+    public void removeRequiredAction(String action) {
+        // not supported
+    }
+
+    @Override
+    public void addRequiredAction(UserModel.RequiredAction action) {
+        // not supported
+    }
+
+    @Override
     public SubjectCredentialManager credentialManager() {
         return new SubjectCredentialManager() {
             @Override
-            public boolean isValid(List<CredentialInput> list) {
+            public boolean isValid(List<CredentialInput> inputs) {
+                for(CredentialInput input : inputs) {
+                    if(PasswordCredentialModel.TYPE.equals(input.getType())) {
+                        String plaintextPassword = input.getChallengeResponse();
+
+                        String hashedPasswordFromDb = user.getPassword();
+
+                        BCrypt.Result result = BCrypt.verifyer().verify(plaintextPassword.toCharArray(), hashedPasswordFromDb);
+                        if(result.verified) {
+                            return true;
+                        }
+                    }
+                }
                 return false;
             }
 
