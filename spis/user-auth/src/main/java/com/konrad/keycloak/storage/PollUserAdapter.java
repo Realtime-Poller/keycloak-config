@@ -4,20 +4,17 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.SubjectCredentialManager;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.adapter.AbstractUserAdapter;
+import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-public class PollUserAdapter extends AbstractUserAdapter {
+public class PollUserAdapter extends AbstractUserAdapterFederatedStorage {
     private final PollUser user;
+    private String storageId;
 
     public PollUserAdapter(KeycloakSession session,
                            RealmModel realm,
@@ -40,19 +37,61 @@ public class PollUserAdapter extends AbstractUserAdapter {
     @Override
     public String getId() {
         if (storageId == null) {
-            storageId = new StorageId(storageProviderModel.getId(), this.user.getId().toString());
+            storageId = new StorageId(storageProviderModel.getId(), this.user.getId().toString()).getId();
         }
-        return storageId.getId();
+        return storageId;
     }
 
     @Override
-    public void removeRequiredAction(String action) {
-        // not supported
+    public void setUsername(String username) {
+        // Read-only implementation - changes not persisted back to external DB
+        user.setEmail(username);
     }
 
     @Override
-    public void addRequiredAction(UserModel.RequiredAction action) {
-        // not supported
+    public void setEmail(String email) {
+        // Read-only implementation - changes not persisted back to external DB
+        user.setEmail(email);
+    }
+
+    @Override
+    public void setEmailVerified(boolean verified) {
+        // Not supported in this implementation
+    }
+
+    @Override
+    public boolean isEmailVerified() {
+        return true;
+    }
+
+    @Override
+    public void setSingleAttribute(String name, String value) {
+        // Delegate to federated storage
+        super.setSingleAttribute(name, value);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        // Delegate to federated storage
+        super.removeAttribute(name);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        // Delegate to federated storage
+        super.setAttribute(name, values);
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        // Delegate to federated storage
+        return super.getFirstAttribute(name);
+    }
+
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+        // Delegate to federated storage
+        return super.getAttributeStream(name);
     }
 
     @Override
@@ -63,7 +102,6 @@ public class PollUserAdapter extends AbstractUserAdapter {
                 for(CredentialInput input : inputs) {
                     if(PasswordCredentialModel.TYPE.equals(input.getType())) {
                         String plaintextPassword = input.getChallengeResponse();
-
                         String hashedPasswordFromDb = user.getPassword();
 
                         BCrypt.Result result = BCrypt.verifyer().verify(plaintextPassword.toCharArray(), hashedPasswordFromDb);
@@ -82,11 +120,12 @@ public class PollUserAdapter extends AbstractUserAdapter {
 
             @Override
             public void updateStoredCredential(CredentialModel credentialModel) {
-
+                // Not implemented for external storage
             }
 
             @Override
             public CredentialModel createStoredCredential(CredentialModel credentialModel) {
+                // Not implemented for external storage
                 return null;
             }
 
@@ -122,12 +161,12 @@ public class PollUserAdapter extends AbstractUserAdapter {
 
             @Override
             public void updateCredentialLabel(String s, String s1) {
-
+                // Not implemented
             }
 
             @Override
             public void disableCredentialType(String s) {
-
+                // Not implemented
             }
 
             @Override
@@ -136,8 +175,9 @@ public class PollUserAdapter extends AbstractUserAdapter {
             }
 
             @Override
-            public boolean isConfiguredFor(String s) {
-                return false;
+            public boolean isConfiguredFor(String type) {
+                // Only password authentication is supported
+                return PasswordCredentialModel.TYPE.equals(type);
             }
 
             @Override
@@ -147,7 +187,7 @@ public class PollUserAdapter extends AbstractUserAdapter {
 
             @Override
             public Stream<String> getConfiguredUserStorageCredentialTypesStream() {
-                return Stream.empty();
+                return Stream.of(PasswordCredentialModel.TYPE);
             }
 
             @Override
