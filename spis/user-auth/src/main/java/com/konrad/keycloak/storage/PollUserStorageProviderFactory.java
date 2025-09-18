@@ -7,6 +7,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
+
 import java.util.List;
 import java.util.Properties;
 
@@ -16,11 +17,58 @@ public class PollUserStorageProviderFactory implements UserStorageProviderFactor
     private HikariDataSource dataSource;
 
     @Override
+    public PollUserStorageProvider create(KeycloakSession keycloakSession) {
+        ComponentModel componentModel = keycloakSession.getContext().getRealm()
+                .getComponentsStream(keycloakSession.getContext().getRealm().getId(), PollUserStorageProvider.class.getName())
+                .filter(c -> PROVIDER_NAME.equals(c.getProviderId()))
+                .findFirst()
+                .orElse(null);
+
+        if (componentModel == null) {
+            throw new IllegalStateException("No configuration found for PollUserStorageProvider. " +
+                    "Please configure the provider in the Keycloak administration.");
+        }
+
+        return new PollUserStorageProvider(keycloakSession, componentModel, this.dataSource);
+    }
+
+
+    @Override
+    public PollUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        return new PollUserStorageProvider(session, model, this.dataSource);
+    }
+
+    @Override
     public void init(Config.Scope scope) {
         Properties properties = new Properties();
-        properties.setProperty("jdbcUrl", scope.get("jdbcUrl"));
-        properties.setProperty("username", scope.get("dbUsername"));
-        properties.setProperty("password", scope.get("dbPassword"));
+
+        String jdbcUrl = scope.get("jdbcUrl");
+        String username = scope.get("dbUsername");
+        String password = scope.get("dbPassword");
+
+        if (jdbcUrl == null) {
+            jdbcUrl = System.getenv("KC_SPI_USER_STORAGE_POLL_APP_POSTGRES_V1_PROVIDER_JDBC_URL");
+        }
+        if (username == null) {
+            username = System.getenv("KC_SPI_USER_STORAGE_POLL_APP_POSTGRES_V1_PROVIDER_DB_USERNAME");
+        }
+        if (password == null) {
+            password = System.getenv("KC_SPI_USER_STORAGE_POLL_APP_POSTGRES_V1_PROVIDER_DB_PASSWORD");
+        }
+
+        if (jdbcUrl == null) {
+            throw new IllegalArgumentException("jdbcUrl darf nicht null sein. Bitte konfigurieren Sie den Parameter in der Keycloak-Konfiguration.");
+        }
+        if (username == null) {
+            throw new IllegalArgumentException("dbUsername darf nicht null sein. Bitte konfigurieren Sie den Parameter in der Keycloak-Konfiguration.");
+        }
+        if (password == null) {
+            throw new IllegalArgumentException("dbPassword darf nicht null sein. Bitte konfigurieren Sie den Parameter in der Keycloak-Konfiguration.");
+        }
+
+        properties.setProperty("jdbcUrl", jdbcUrl);
+        properties.setProperty("username", username);
+        properties.setProperty("password", password);
 
         properties.setProperty("maximumPoolSize", "10");
         properties.setProperty("minimumIdle", "5");
@@ -33,10 +81,6 @@ public class PollUserStorageProviderFactory implements UserStorageProviderFactor
         dataSource = new HikariDataSource(config);
     }
 
-    @Override
-    public PollUserStorageProvider create(KeycloakSession session, ComponentModel model) {
-        return new PollUserStorageProvider(session, model, this.dataSource);
-    }
 
     @Override
     public void close() {
