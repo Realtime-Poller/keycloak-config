@@ -1,5 +1,6 @@
 package com.konrad.keycloak.storage;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.*;
@@ -20,10 +21,14 @@ public class PollUserStorageProvider implements
         UserQueryProvider {
     private final KeycloakSession session;
     private final ComponentModel model;
+    private final HikariDataSource dataSource;
 
-    public PollUserStorageProvider(KeycloakSession session, ComponentModel model) {
+    public PollUserStorageProvider(KeycloakSession session,
+                                   ComponentModel model,
+                                   HikariDataSource dataSource) {
         this.session = session;
         this.model = model;
+        this.dataSource = dataSource;
     }
 
     private UserModel findUserByEmail(RealmModel realmModel, String email) {
@@ -31,11 +36,7 @@ public class PollUserStorageProvider implements
                 "SELECT id, email, password, createdTimestamp, lastUpdatedTimestamp" +
                         " FROM USERS" +
                         " WHERE email = ?";
-        String url = this.model.getConfig().getFirst("jdbcUrl");
-        String user = this.model.getConfig().getFirst("dbUsername");
-        String password = this.model.getConfig().getFirst("dbPassword");
-
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(SELECT_USER_BY_EMAIL)) {
             preparedStatement.setString(1, email);
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -83,11 +84,8 @@ public class PollUserStorageProvider implements
                 "SELECT id, email, password, createdTimestamp, lastUpdatedTimestamp" +
                         " FROM USERS" +
                         " WHERE id = ?";
-        String url = this.model.getConfig().getFirst("jdbcUrl");
-        String user = this.model.getConfig().getFirst("dbUsername");
-        String password = this.model.getConfig().getFirst("dbPassword");
 
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(SELECT_USER_BY_ID)) {
             preparedStatement.setLong(1, userId);
             try (ResultSet rs = preparedStatement.executeQuery()) {

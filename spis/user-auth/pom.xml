@@ -40,6 +40,10 @@
             <groupId>at.favre.lib</groupId>
             <artifactId>bcrypt</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
