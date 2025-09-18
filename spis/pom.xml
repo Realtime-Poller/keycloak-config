@@ -19,10 +19,10 @@
     </modules>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <keycloak.version>22.0.5</keycloak.version>
+        <keycloak.version>26.3.4</keycloak.version>
         <postgresql.driver.version>42.7.7</postgresql.driver.version>
     </properties>
 
@@ -49,12 +49,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-spi-private</artifactId>
-                <version>${keycloak.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-legacy</artifactId>
                 <version>${keycloak.version}</version>
                 <scope>provided</scope>
             </dependency>
