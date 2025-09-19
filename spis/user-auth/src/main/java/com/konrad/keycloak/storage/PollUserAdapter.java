@@ -10,11 +10,12 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public class PollUserAdapter extends AbstractUserAdapterFederatedStorage {
     private final PollUser user;
-    private String storageId;
+    private ConcurrentHashMap<String, Object> attributes = new ConcurrentHashMap<>();
 
     public PollUserAdapter(KeycloakSession session,
                            RealmModel realm,
@@ -22,6 +23,8 @@ public class PollUserAdapter extends AbstractUserAdapterFederatedStorage {
                            PollUser user) {
         super(session, realm, model);
         this.user = user;
+        setAttribute("email", List.of(user.getEmail()));
+        setAttribute("username", List.of(user.getEmail()));
     }
 
     @Override
@@ -36,22 +39,22 @@ public class PollUserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public String getId() {
-        if (storageId == null) {
-            storageId = new StorageId(storageProviderModel.getId(), this.user.getId().toString()).getId();
+        if (this.storageId == null) {
+            this.storageId = new StorageId(storageProviderModel.getId(), this.user.getId().toString());
         }
-        return storageId;
+        return this.storageId.getId();
     }
 
     @Override
     public void setUsername(String username) {
-        // Read-only implementation - changes not persisted back to external DB
-        user.setEmail(username);
+        List<String> singletonList = List.of(username);
+        attributes.put("email", singletonList);
     }
 
     @Override
     public void setEmail(String email) {
-        // Read-only implementation - changes not persisted back to external DB
-        user.setEmail(email);
+        List<String> singletonList = List.of(email);
+        attributes.put("username", singletonList);
     }
 
     @Override
@@ -66,32 +69,45 @@ public class PollUserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        // Delegate to federated storage
-        super.setSingleAttribute(name, value);
+        List<String> singletonList = List.of(value);
+        attributes.put(name, singletonList);
     }
 
     @Override
     public void removeAttribute(String name) {
-        // Delegate to federated storage
-        super.removeAttribute(name);
+        attributes.remove(name);
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        // Delegate to federated storage
-        super.setAttribute(name, values);
+        attributes.put(name, values);
     }
 
     @Override
     public String getFirstAttribute(String name) {
-        // Delegate to federated storage
-        return super.getFirstAttribute(name);
+        Object value = attributes.get(name);
+
+        if (value instanceof List) {
+            List<String> attributeValues = (List<String>) value;
+
+            if (!attributeValues.isEmpty()) {
+                return attributeValues.get(0);
+            }
+        }
+        return null;
     }
 
     @Override
     public Stream<String> getAttributeStream(String name) {
-        // Delegate to federated storage
-        return super.getAttributeStream(name);
+        Object value = attributes.get(name);
+
+        if( value instanceof List ) {
+            List<String> attributeValues = (List<String>) value;
+            if(!attributeValues.isEmpty()) {
+                return attributeValues.stream();
+            }
+        }
+        return Stream.empty();
     }
 
     @Override
