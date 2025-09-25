@@ -1,5 +1,6 @@
 package com.konrad.keycloak.storage;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -248,9 +249,11 @@ public class PollUserStorageProvider implements
             return false;
         }
 
-        String passwordFromDb = pollUser.getPassword();
+        String hashedPasswordFromDb = pollUser.getPassword();
         String plaintextPassword = credentialInput.getChallengeResponse();
 
-        return plaintextPassword.equals(passwordFromDb);
+        BCrypt.Result result = BCrypt.verifyer().verify(plaintextPassword.toCharArray(), hashedPasswordFromDb);
+
+        return result.verified;
     }
 }
