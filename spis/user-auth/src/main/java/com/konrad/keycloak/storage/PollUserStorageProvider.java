@@ -5,6 +5,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.*;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -25,7 +27,8 @@ public class PollUserStorageProvider implements
         UserLookupProvider,
         UserStorageProvider,
         UserQueryProvider,
-        UserAttributeFederatedStorage {
+        UserAttributeFederatedStorage,
+        CredentialInputValidator {
     private final KeycloakSession session;
     private final ComponentModel model;
     private final HikariDataSource dataSource;
@@ -86,10 +89,15 @@ public class PollUserStorageProvider implements
             return null;
         }
 
-        return findUserById(realmModel, userId);
+        PollUser pollUser = findPollUserById(userId);
+        if (pollUser != null) {
+            return new PollUserAdapter(session, realmModel, model, pollUser);
+        }
+
+        return null;
     }
 
-    private UserModel findUserById(RealmModel realmModel, Long userId) {
+    private PollUser findPollUserById(Long userId) {
         final String SELECT_USER_BY_ID =
                 "SELECT id, email, password, createdTimestamp, lastUpdatedTimestamp" +
                         " FROM USERS" +
@@ -108,13 +116,12 @@ public class PollUserStorageProvider implements
                             .map(Timestamp::toInstant)
                             .orElse(null);
 
-                    PollUser pollUser = new PollUser(
+                    return new PollUser(
                             rs.getLong("id"),
                             rs.getString("email"),
                             rs.getString("password"),
                             created,
                             updated);
-                    return new PollUserAdapter(session, realmModel, model, pollUser);
                 }
             }
         } catch (Exception e) {
@@ -215,5 +222,35 @@ public class PollUserStorageProvider implements
             }
         }
         return Stream.empty();
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return credentialType.equals(CredentialModel.PASSWORD);
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return credentialType.equals(CredentialModel.PASSWORD);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput credentialInput) {
+        if (!supportsCredentialType(credentialInput.getType())) {
+            return false;
+        }
+
+        StorageId storageId = new StorageId(user.getId());
+        String externalId = storageId.getExternalId();
+
+        PollUser pollUser = findPollUserById(Long.parseLong(externalId));
+        if (pollUser == null) {
+            return false;
+        }
+
+        String passwordFromDb = pollUser.getPassword();
+        String plaintextPassword = credentialInput.getChallengeResponse();
+
+        return plaintextPassword.equals(passwordFromDb);
     }
 }

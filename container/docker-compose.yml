@@ -16,10 +16,10 @@ services:
       KC_SPI_USER_STORAGE_POLL_APP_POSTGRES_V1_PROVIDER_DB_PASSWORD: "postgres"
       KC_LOG_LEVEL: "DEBUG,org.keycloak.provider:TRACE,org.keycloak.services:TRACE"
     volumes:
-      # - ../spis/user-auth/target/user-auth-1.0-SNAPSHOT.jar:/opt/keycloak/providers/user-auth-1.0-SNAPSHOT.jar
+      - ../spis/user-auth/target/user-auth-1.0-SNAPSHOT.jar:/opt/keycloak/providers/user-auth-1.0-SNAPSHOT.jar
       - ../spis/policy-provider/target/policy-provider-1.0-SNAPSHOT.jar:/opt/keycloak/providers/policy-provider-1.0-SNAPSHOT.jar
 
-      # - ../spis/user-auth/target/libs:/opt/keycloak/providers/
+      - ../spis/user-auth/target/libs:/opt/keycloak/providers/
     networks:
       - poll-app-network
 

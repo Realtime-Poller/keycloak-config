@@ -8,7 +8,9 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-public class OwnerPolicyProviderFactory implements PolicyProviderFactory<OwnerPolicyRepresentation> {
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+
+public class OwnerPolicyProviderFactory implements PolicyProviderFactory<PolicyRepresentation> {
 
     public static final String PROVIDER_ID = "com-konrad-owner-policy";
 
@@ -40,16 +42,22 @@ public class OwnerPolicyProviderFactory implements PolicyProviderFactory<OwnerPo
     }
 
     @Override
-    public OwnerPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
-        OwnerPolicyRepresentation rep = new OwnerPolicyRepresentation();
+    public PolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
+        PolicyRepresentation rep = new PolicyRepresentation();
         rep.setName(policy.getName());
         rep.setDescription(policy.getDescription());
+        rep.setType(PROVIDER_ID);
         return rep;
     }
 
     @Override
-    public Class<OwnerPolicyRepresentation> getRepresentationType() {
-        return OwnerPolicyRepresentation.class;
+    public Class<PolicyRepresentation> getRepresentationType() {
+        return PolicyRepresentation.class;
+    }
+
+    @Override
+    public void onCreate(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        // This remains empty as there's no custom configuration to save.
     }
 
     @Override
