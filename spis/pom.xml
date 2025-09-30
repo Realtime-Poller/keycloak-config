@@ -3,42 +3,29 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.konrad.spis</groupId>
     <artifactId>spis-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-
     <name>Keycloak SPIs Parent</name>
-    <modules>
 
+    <modules>
         <module>user-auth</module>
-        <module>token-exchange</module>
-        <module>protocol-mapper-claims</module>
+        <module>policy-provider</module>
     </modules>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <keycloak.version>22.0.5</keycloak.version>
+        <keycloak.version>26.3.4</keycloak.version>
         <postgresql.driver.version>42.7.7</postgresql.driver.version>
+        <bcrypt.version>0.10.2</bcrypt.version>
+        <hikaricp.version>5.1.0</hikaricp.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-core</artifactId>
-                <version>${keycloak.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-services</artifactId>
-                <version>${keycloak.version}</version>
-                <scope>provided</scope>
-            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-spi</artifactId>
@@ -53,28 +40,60 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-legacy</artifactId>
+                <artifactId>keycloak-services</artifactId>
                 <version>${keycloak.version}</version>
                 <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.smallrye.config</groupId>
+                        <artifactId>smallrye-config</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
+
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.driver.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.google.auto.service</groupId>
-                <artifactId>auto-service</artifactId>
-                <version>1.1.1</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>at.favre.lib</groupId>
                 <artifactId>bcrypt</artifactId>
-                <version>0.10.2</version>
-                <scope>compile</scope>
+                <version>${bcrypt.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikaricp.version}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.6.1</version>
+                    <executions>
+                        <execution>
+                            <id>copy-dependencies</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/libs</outputDirectory>
+                                <includeGroupIds>org.postgresql,at.favre.lib,com.zaxxer</includeGroupIds>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

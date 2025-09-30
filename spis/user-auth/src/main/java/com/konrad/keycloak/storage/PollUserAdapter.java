@@ -1,23 +1,17 @@
 package com.konrad.keycloak.storage;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialInput;
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.SubjectCredentialManager;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.models.*;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.adapter.AbstractUserAdapter;
+import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-public class PollUserAdapter extends AbstractUserAdapter {
+public class PollUserAdapter extends AbstractUserAdapterFederatedStorage {
     private final PollUser user;
+    private ConcurrentHashMap<String, Object> attributes = new ConcurrentHashMap<>();
 
     public PollUserAdapter(KeycloakSession session,
                            RealmModel realm,
@@ -25,6 +19,8 @@ public class PollUserAdapter extends AbstractUserAdapter {
                            PollUser user) {
         super(session, realm, model);
         this.user = user;
+        setAttribute("email", List.of(user.getEmail()));
+        setAttribute("username", List.of(user.getEmail()));
     }
 
     @Override
@@ -39,121 +35,74 @@ public class PollUserAdapter extends AbstractUserAdapter {
 
     @Override
     public String getId() {
-        if (storageId == null) {
-            storageId = new StorageId(storageProviderModel.getId(), this.user.getId().toString());
+        if (this.storageId == null) {
+            this.storageId = new StorageId(storageProviderModel.getId(), this.user.getId().toString());
         }
-        return storageId.getId();
+        return this.storageId.getId();
     }
 
     @Override
-    public void removeRequiredAction(String action) {
-        // not supported
+    public void setUsername(String username) {
+        List<String> singletonList = List.of(username);
+        attributes.put("email", singletonList);
     }
 
     @Override
-    public void addRequiredAction(UserModel.RequiredAction action) {
-        // not supported
+    public void setEmail(String email) {
+        List<String> singletonList = List.of(email);
+        attributes.put("username", singletonList);
     }
 
     @Override
-    public SubjectCredentialManager credentialManager() {
-        return new SubjectCredentialManager() {
-            @Override
-            public boolean isValid(List<CredentialInput> inputs) {
-                for(CredentialInput input : inputs) {
-                    if(PasswordCredentialModel.TYPE.equals(input.getType())) {
-                        String plaintextPassword = input.getChallengeResponse();
+    public void setEmailVerified(boolean verified) {
+        // Not supported in this implementation
+    }
 
-                        String hashedPasswordFromDb = user.getPassword();
+    @Override
+    public boolean isEmailVerified() {
+        return true;
+    }
 
-                        BCrypt.Result result = BCrypt.verifyer().verify(plaintextPassword.toCharArray(), hashedPasswordFromDb);
-                        if(result.verified) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
+    @Override
+    public void setSingleAttribute(String name, String value) {
+        List<String> singletonList = List.of(value);
+        attributes.put(name, singletonList);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        attributes.remove(name);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        attributes.put(name, values);
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        Object value = attributes.get(name);
+
+        if (value instanceof List) {
+            List<String> attributeValues = (List<String>) value;
+
+            if (!attributeValues.isEmpty()) {
+                return attributeValues.get(0);
             }
+        }
+        return null;
+    }
 
-            @Override
-            public boolean updateCredential(CredentialInput credentialInput) {
-                return false;
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+        Object value = attributes.get(name);
+
+        if( value instanceof List ) {
+            List<String> attributeValues = (List<String>) value;
+            if(!attributeValues.isEmpty()) {
+                return attributeValues.stream();
             }
-
-            @Override
-            public void updateStoredCredential(CredentialModel credentialModel) {
-
-            }
-
-            @Override
-            public CredentialModel createStoredCredential(CredentialModel credentialModel) {
-                return null;
-            }
-
-            @Override
-            public boolean removeStoredCredentialById(String s) {
-                return false;
-            }
-
-            @Override
-            public CredentialModel getStoredCredentialById(String s) {
-                return null;
-            }
-
-            @Override
-            public Stream<CredentialModel> getStoredCredentialsStream() {
-                return Stream.empty();
-            }
-
-            @Override
-            public Stream<CredentialModel> getStoredCredentialsByTypeStream(String s) {
-                return Stream.empty();
-            }
-
-            @Override
-            public CredentialModel getStoredCredentialByNameAndType(String s, String s1) {
-                return null;
-            }
-
-            @Override
-            public boolean moveStoredCredentialTo(String s, String s1) {
-                return false;
-            }
-
-            @Override
-            public void updateCredentialLabel(String s, String s1) {
-
-            }
-
-            @Override
-            public void disableCredentialType(String s) {
-
-            }
-
-            @Override
-            public Stream<String> getDisableableCredentialTypesStream() {
-                return Stream.empty();
-            }
-
-            @Override
-            public boolean isConfiguredFor(String s) {
-                return false;
-            }
-
-            @Override
-            public boolean isConfiguredLocally(String s) {
-                return false;
-            }
-
-            @Override
-            public Stream<String> getConfiguredUserStorageCredentialTypesStream() {
-                return Stream.empty();
-            }
-
-            @Override
-            public CredentialModel createCredentialThroughProvider(CredentialModel credentialModel) {
-                return null;
-            }
-        };
+        }
+        return Stream.empty();
     }
 }
