@@ -5,6 +5,7 @@ services:
     command:
       - start-dev
       - --features=scripts
+      - --import-realm
     ports:
       - "8080:8080"
       - "8787:8787"
@@ -14,12 +15,12 @@ services:
       KC_SPI_USER_STORAGE_POLL_APP_POSTGRES_V1_PROVIDER_JDBC_URL: "jdbc:postgresql://db:5432/pmp_db_local"
       KC_SPI_USER_STORAGE_POLL_APP_POSTGRES_V1_PROVIDER_DB_USERNAME: "postgres"
       KC_SPI_USER_STORAGE_POLL_APP_POSTGRES_V1_PROVIDER_DB_PASSWORD: "postgres"
-      KC_LOG_LEVEL: "DEBUG,org.keycloak.provider:TRACE,org.keycloak.services:TRACE"
+      KC_LOG_LEVEL: "INFO,org.keycloak.exportimport:DEBUG"
     volumes:
       - ../spis/user-auth/target/user-auth-1.0-SNAPSHOT.jar:/opt/keycloak/providers/user-auth-1.0-SNAPSHOT.jar
       - ../spis/policy-provider/target/policy-provider-1.0-SNAPSHOT.jar:/opt/keycloak/providers/policy-provider-1.0-SNAPSHOT.jar
-
       - ../spis/user-auth/target/libs:/opt/keycloak/providers/
+      - ../realms/realm-export.json:/opt/keycloak/data/import/realm-export.json
     networks:
       - poll-app-network
 
