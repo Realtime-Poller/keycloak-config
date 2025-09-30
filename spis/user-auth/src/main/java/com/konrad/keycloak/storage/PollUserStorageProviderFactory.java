@@ -57,13 +57,13 @@ public class PollUserStorageProviderFactory implements UserStorageProviderFactor
         }
 
         if (jdbcUrl == null) {
-            throw new IllegalArgumentException("jdbcUrl darf nicht null sein. Bitte konfigurieren Sie den Parameter in der Keycloak-Konfiguration.");
+            throw new IllegalArgumentException("jdbcUrl cannot be null. Please configure the parameter in the Keycloak configuration.");
         }
         if (username == null) {
-            throw new IllegalArgumentException("dbUsername darf nicht null sein. Bitte konfigurieren Sie den Parameter in der Keycloak-Konfiguration.");
+            throw new IllegalArgumentException("jdbcUrl cannot be null. Please configure the parameter in the Keycloak configuration.");
         }
         if (password == null) {
-            throw new IllegalArgumentException("dbPassword darf nicht null sein. Bitte konfigurieren Sie den Parameter in der Keycloak-Konfiguration.");
+            throw new IllegalArgumentException("jdbcUrl cannot be null. Please configure the parameter in the Keycloak configuration.");
         }
 
         properties.setProperty("jdbcUrl", jdbcUrl);

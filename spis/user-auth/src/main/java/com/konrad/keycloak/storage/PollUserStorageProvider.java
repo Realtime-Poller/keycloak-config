@@ -54,7 +54,6 @@ public class PollUserStorageProvider implements
             preparedStatement.setString(1, email);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if(rs.next()) {
-                    logger.debug("User found in database, creating PollUserAdapter.");
                     Instant created = Optional.ofNullable(rs.getTimestamp("createdTimestamp"))
                             .map(Timestamp::toInstant)
                             .orElse(null);
@@ -126,7 +125,7 @@ public class PollUserStorageProvider implements
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error when searching for user by Id", e);
         }
         return null;
     }
@@ -156,27 +155,21 @@ public class PollUserStorageProvider implements
     public Stream<UserModel> searchForUserStream(RealmModel realmModel, Map<String, String> map, Integer firstResult, Integer maxResults) {
         try {
             String searchString = map.get(UserModel.SEARCH);
-            logger.debugf("Searching for users with parameters: %s", map);
 
             if (searchString == null || searchString.trim().isEmpty()) {
-                logger.debug("Search string is null or empty, returning empty stream");
                 return Stream.empty();
             }
 
             searchString = searchString.trim();
-            logger.debugf("Attempting to find user by email: %s", searchString);
 
             UserModel user = findUserByEmail(realmModel, searchString);
 
             if (user != null) {
-                logger.debugf("Found user: %s", user.getId());
                 return Stream.of(user);
             } else {
-                logger.debugf("No user found for search: %s", searchString);
                 return Stream.empty();
             }
         } catch (Exception e) {
-            logger.error("Error during user search", e);
             return Stream.empty();
         }
     }
